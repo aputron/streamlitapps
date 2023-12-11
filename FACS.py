@@ -7,6 +7,7 @@ import seaborn as sns
 import pandas as pd
 import os
 import shutil
+import _tkinter
 
 #%%
 # function to make a graph in landscape mode
