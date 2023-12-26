@@ -65,7 +65,7 @@ def mutation_frequency(list_of_files, names):
     #fig, ax = plt.subplots(figsize=(35, 2))
     #graph = sns.heatmap([mutation_frequency['High Background'][:563], mutation_frequency['Low Background'][:563],mutational_freq['High Signal'][:563],  mutational_freq['Low Signal'][:563]], cmap ='magma', vmax=90)
     #graph = sns.heatmap(mutational_freq, cmap ='magma', vmax=90)
-    graph = px.imshow(mutational_freq, color_continuous_scale="sunsetdark", zmax=90)
+    graph = px.imshow(mutational_freq, color_continuous_scale="delta", zmax=90)
         
     return graph
 
@@ -88,7 +88,7 @@ with st.expander("Mutant Library Variation", True):
             files = []
             for uploaded_file in file: # save the uploaded file remotely to make appropriate graphs easily
                 with open(os.path.join("tempDir",uploaded_file.name),"wb") as f:
-                    f.write(uploaded_file.getbuffer()[212:])
+                    f.write(uploaded_file.getbuffer()[211:])
                     files.append(f"tempDir/{uploaded_file.name}")
             x = wt_ml(files, 10, 2)
             st.pyplot(x)
