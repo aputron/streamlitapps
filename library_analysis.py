@@ -88,7 +88,7 @@ with st.expander("Mutant Library Variation", True):
             files = []
             for uploaded_file in file: # save the uploaded file remotely to make appropriate graphs easily
                 with open(os.path.join("tempDir",uploaded_file.name),"wb") as f:
-                    f.write(uploaded_file.getbuffer()[211:])
+                    f.write(uploaded_file.getbuffer()[218:])
                     files.append(f"tempDir/{uploaded_file.name}")
             x = wt_ml(files, 10, 2)
             st.pyplot(x)
@@ -108,7 +108,7 @@ with st.expander("Mutant Variation in sorted samples", True):
             labels = []
             for uploaded_file in file: # save the uploaded file remotely to make appropriate graphs easily
                 with open(os.path.join("tempDir",uploaded_file.name),"wb") as f:
-                    f.write(uploaded_file.getbuffer()[212:])
+                    f.write(uploaded_file.getbuffer()[230:])
                     files.append(f"tempDir/{uploaded_file.name}")
                     labels.append(uploaded_file.name)
             x = mutation_frequency(files, labels)
