@@ -1,1 +1,3 @@
 .venv/
+testdata/
+.DS_Store

@@ -1,16 +1,26 @@
 #%%
+import Bio #.SeqIO
 import streamlit as st
 import pandas as pd
 import re
 
 #%%
 
-# Function to load the sequences and their descriptions
-# filename: FASTA file contianing the mutant library
-
 def read_mut_lib(filename):
+    """Load the sequences and their descriptions
+
+    Parameters:
+    ----------
+    filename: str
+        FASTA file contianing the mutant library
+
+    Returns
+    -------
+    Tuple[List[str], List[str]]
+        List of Sequences and their corresponding descriptions
+    """
     seq = []
-    description = []
+    description = []    
 
     for record in Bio.SeqIO.parse(filename, "fasta"):
         seq.append(record.seq)
@@ -22,6 +32,18 @@ def read_mut_lib(filename):
 # description: list of the descriptions of sequences in a FASTA file
 
 def list_mut(description):
+    """Extract the mutations to be made
+
+    Parameters:
+    ----------
+    description: str
+        Descriptions of sequences in a FASTA file      
+
+    Returns
+    -------
+    List[List[str]]
+        List of mutants metadata
+    """
     des = []
     for i in description:
         string = i.split()
@@ -85,34 +107,47 @@ def primer_db(filename):
     return df
 
 #%%
-
-# Function to check if a given sequence has valid DNA nucleotides
-# seq: Query sequence
-
 def valid_dna(seq):
+    """Function to check if a given sequence has valid DNA nucleotides
+
+    Parameters:
+    ----------
+    seq: str
+        Query sequence
+
+    Returns
+    -------
+    bool
+        Does query sequence have the valid DNA nucleotides
+    """
     dna_ref = set("ATGC")
     seq = set(seq.upper())
-    if seq.issubset(dna_ref):
-        result = True
-    else:
-        result = False
-    return result
+    return seq.issubset(dna_ref)
 
 #%%
 
-# Function to generate barcoded primers for multiplexed Nanopore sequencing
-# forward: 5' to 3' region of the primer annealing to the forward strand
-# reverse: 5' to 3' region of the primer annealing to the reverse strand
-# primer_name: General name of the primers; final name will include F or R and the number
-# forward_bc: Barcodes to be attached to the forward primers; default primers used in the study
-# reverse_bc: Barcodes to be attached to the reverse primers; default primers used in the study
-
 def generate_barcodes(forward, reverse, primer_name, forward_bc, reverse_bc):
+    """Generate barcoded primers for multiplexed Nanopore sequencing
 
-    for_primers = []
-    for_primer_name = []
-    rev_primers = []
-    rev_primer_name = []
+    Parameters:
+    ----------
+    forward: str
+        5' to 3' region of the primer annealing to the forward strand
+    reverse: str
+        5' to 3' region of the primer annealing to the reverse strand
+    primer_name: str
+        General name of the primers; final name will include F or R and the number
+    forward_bc: List[str]
+        Barcodes to be attached to the forward primers; default primers used in the study
+    reverse_bc: List[str]
+        Barcodes to be attached to the reverse primers; default primers used in the study
+
+    Returns
+    -------
+    pandas.DataFrame
+        Barcoded primers with label
+    """
+    for_primers, for_primer_name, rev_primers, rev_primer_name = [], [], [], []
 
     # stich primers with barcodes
     for i in range(len(forward_bc)):
@@ -126,81 +161,79 @@ def generate_barcodes(forward, reverse, primer_name, forward_bc, reverse_bc):
     # make primer list
     primer_name = for_primer_name + rev_primer_name
     primers = {"Barcoded Primers": for_primers + rev_primers}
-        
-    df = pd.DataFrame(primers, primer_name)
 
-    return df
+    return pd.DataFrame(primers, primer_name)
 
 #%%
 
-# Streamlit application
-# Page title
-st.markdown(
-    """
-    # Primer Generation
-    """
-)
+if __name__ == "__main__":
+    # Streamlit application
+    # Page title
+    st.markdown(
+        """
+        # Primer Generation
+        """
+    )
 
-tab1, tab2 = st.tabs(["Mutant Primers", "Barcode Primers"])
+    tab1, tab2 = st.tabs(["Mutant Primers", "Barcode Primers"])
 
-# to generate barcoded primers
-with tab2:
-    st.markdown("**Input your sequences (5' to  3'):**")
-    col1, col2= st.columns([1,1]) 
-    with col1:
-        forward = st.text_input("FORWARD") # input the forward annealing sequence
-    with col2:
-        reverse = st. text_input("REVERSE") # input the reverse annealing sequence
-
-    with st.expander("Advanced"):
-        col1, col2= st.columns([1,1]) 
+    # to generate barcoded primers
+    with tab2:
+        st.markdown("**Input your sequences (5' to  3'):**")
+        col1, col2 = st.columns([1,1]) 
         with col1:
-            primer_name = st.text_input("Primer names", value="Primer") # input general primer name
+            forward = st.text_input("FORWARD") # input the forward annealing sequence
         with col2:
-            filename = st.text_input("Barcode Filename", value="barcoded_primers") # input filname
-        
-        st.markdown("Inputting barcodes:")
-        col1, col2= st.columns([1,1]) 
-        with col1:
-            forward_bc_def = {"Forward Primers": [
+            reverse = st.text_input("REVERSE") # input the reverse annealing sequence
 
-                "AATCCCACTAC", "TGAACTGAGCG", "TATCTGACCTT", 
-                "ATATGAGACG", "CGCTCATTAG", "TAATCTCGTC", 
-                "GCGCGATTTT", "AGAGCACTAG", "TGCCTTGATC", 
-                "CTACTCAGTC", "TCGTCTGACT", "GAACATACGG"
-                
-                ]} # default forward barcodes
+        with st.expander("Advanced"):
+            col1, col2 = st.columns([1,1]) 
+            with col1:
+                primer_name = st.text_input("Primer names", value="Primer") # input general primer name
+            with col2:
+                filename = st.text_input("Barcode Filename", value="barcoded_primers") # input filname
             
-            forward_bc = st.data_editor(forward_bc_def, num_rows="dynamic", use_container_width=True)
-        
-        with col2:
-            reverse_bc_def = {"Reverse Primers": [
+            st.markdown("Inputting barcodes:")
+            col1, col2 = st.columns([1,1]) 
+            with col1:
+                forward_bc_def = {"Forward Primers": [
 
-                "CCCTATGACA", "TAATGGCAAG", "AACAAGGCGT", 
-                "GTATGTAGAA", "TTCTATGGGG", "CCTCGCAACC", 
-                "TGGATGCTTA", "AGAGTGCGGC"
+                    "AATCCCACTAC", "TGAACTGAGCG", "TATCTGACCTT", 
+                    "ATATGAGACG", "CGCTCATTAG", "TAATCTCGTC", 
+                    "GCGCGATTTT", "AGAGCACTAG", "TGCCTTGATC", 
+                    "CTACTCAGTC", "TCGTCTGACT", "GAACATACGG"
+                    
+                    ]} # default forward barcodes
                 
-                ]} # default reverse barcodes
+                forward_bc = st.data_editor(forward_bc_def, num_rows="dynamic", use_container_width=True)
             
-            reverse_bc = st.data_editor(reverse_bc_def, num_rows="dynamic", use_container_width=True)
-    
-    submitted = st.button("Submit!")
-    if submitted:
-        f = "".join(forward_bc["Forward Primers"]) # to check if the inputted barcodes are actually DNA bases
-        r = "".join(reverse_bc["Reverse Primers"])
+            with col2:
+                reverse_bc_def = {"Reverse Primers": [
 
-        # catch exceptions
-        if len(forward)==0 or len(reverse)==0:
-            st.error("Please input your forward/reverse sequences that you would like to stitch the barcodes to")
-        elif valid_dna(forward)==False or valid_dna(reverse)==False:
-           st.error("Please input a valid DNA sequence")
-        elif valid_dna(f)==False or valid_dna(r)==False:
-            st.error("Please input a valid DNA sequence as the barcode")
+                    "CCCTATGACA", "TAATGGCAAG", "AACAAGGCGT", 
+                    "GTATGTAGAA", "TTCTATGGGG", "CCTCGCAACC", 
+                    "TGGATGCTTA", "AGAGTGCGGC"
+                    
+                    ]} # default reverse barcodes
+                
+                reverse_bc = st.data_editor(reverse_bc_def, num_rows="dynamic", use_container_width=True)
+        
+        submitted = st.button("Submit!")
+        if submitted:
+            # to check if the inputted barcodes are actually DNA bases
+            f = "".join(forward_bc["Forward Primers"])
+            r = "".join(reverse_bc["Reverse Primers"])
 
-        # run script
-        else:
-            barcodes = generate_barcodes(forward, reverse, primer_name, forward_bc["Forward Primers"], reverse_bc["Reverse Primers"])
-            st.table(barcodes)   # display table         
-            st.download_button(label="Download primers", 
-                               data=barcodes.to_csv(), 
-                               file_name=f'{filename}.csv') # download excel file in an easy to order format
+            # catch exceptions
+            if forward == "" or reverse == "":
+                st.error("Please input your forward/reverse sequences that you would like to stitch the barcodes to")
+            elif not valid_dna(forward) or not valid_dna(reverse):
+                st.error("Please input a valid DNA sequence")
+            elif not valid_dna(f) or not valid_dna(r):
+                st.error("Please input a valid DNA sequence as the barcode")
+            else: # run script
+                barcodes = generate_barcodes(forward, reverse, primer_name, forward_bc["Forward Primers"], reverse_bc["Reverse Primers"])
+                st.table(barcodes)   # display table         
+                st.download_button(label="Download primers", 
+                                    data=barcodes.to_csv(), 
+                                    file_name=f'{filename}.csv') # download excel file in an easy to order format
