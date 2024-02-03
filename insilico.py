@@ -149,8 +149,9 @@ if __name__ == "__main__":
     )
     submitted = st.button("Submit!")
     if submitted:
-        shutil.rmtree("tempDir")
         st.write("UPLOADED!")
+        if os.path.isdir('tempDir'):
+            shutil.rmtree("tempDir")
         os.mkdir("tempDir")
         if file is not None:
             with open(os.path.join("tempDir", file.name), "wb") as f:
@@ -179,3 +180,4 @@ if __name__ == "__main__":
                 with open("tempDir/mutant_library_aa.fasta", "r") as aa_text:
                     st.download_button("AA of Mutant candidates", data=aa_text, file_name='mutant_library_aa.fasta', mime='application/octet-stream')
                 st.write(aa)
+        
