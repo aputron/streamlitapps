@@ -93,7 +93,6 @@ def mutant_library(ref_seq, filename, overall_lib_size=500000, aa_sub_count=(4, 
         for x in diff:
             des = f"{ref_aa[x]}{x + 1}{mut_aa[i][x]}"
             description.append(des)
-        print(description)
         description = "|".join(description)
         dna_read = SeqRecord(
             Seq(mutated_seqs[i]), id="Mutant Library", description=description
