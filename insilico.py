@@ -13,7 +13,7 @@ import shutil
 def random_mutagenesis(template_dna, template_aa, mut_rng):
     """Generate random mutations across a template/target DNA
 
-    Parameters:
+    Parameters
     ----------
     template_dna: Bio.SeqRecord.SeqRecord
         Template DNA to be mutated
@@ -57,7 +57,7 @@ def dif(a, b):
 def mutant_library(ref_seq, filename, overall_lib_size=500000, aa_sub_count=(4, 5)):
     """Creates a mutant library of a specified size with specified number of mutations
 
-    Parameters:
+    Parameters
     ----------
     ref_seq: Bio.Seq.Seq
         Reference Template DNA Sequence
@@ -112,7 +112,7 @@ def mutant_library(ref_seq, filename, overall_lib_size=500000, aa_sub_count=(4, 
 def valid_dna(seq):
     """Function to check if a given sequence has valid DNA nucleotides
 
-    Parameters:
+    Parameters
     ----------
     seq: str
         Query sequence
@@ -169,10 +169,13 @@ if __name__ == "__main__":
             dna, aa = mutant_library(
                 sequence, "mutant_library", overall_lib_size=tot, aa_sub_count=num
             )
+
             col1, col2 = st.columns([1,1]) 
             with col1:
-                st.download_button("DNA of Mutant candidates", data=dna, file_name=f'tempDir/mutant_library_dna.fasta', mime='application/octet-stream')
+                with open("tempDir/mutant_library_dna.fasta", "r") as dna_text:
+                    st.download_button("DNA of Mutant candidates", data=dna_text, file_name='mutant_library_dna.fasta', mime='application/octet-stream')
                 st.write(dna)
             with col2:
-                st.download_button("AA of Mutant candidates", data=aa, file_name=f'tempDir/mutant_library_aa.fasta', mime='application/octet-stream')
+                with open("tempDir/mutant_library_aa.fasta", "r") as aa_text:
+                    st.download_button("AA of Mutant candidates", data=aa_text, file_name='mutant_library_aa.fasta', mime='application/octet-stream')
                 st.write(aa)
