@@ -177,6 +177,26 @@ if __name__ == "__main__":
 
     tab1, tab2 = st.tabs(["Mutant Primers", "Barcode Primers"])
 
+    # to design primers for site-directed mutagenesis
+    with tab1:
+        with st.form("ml-form"):
+            file = st.file_uploader(
+            "FILE UPLOADER: Input one FASTA file containing your mutant candidates, with the respective mutations in the description",
+            type=".fasta",
+            accept_multiple_files=True,
+        )
+        submitted = st.form_submit_button("Submit!")
+        if submitted and len(file) == 2:
+            st.write("UPLOADED!")
+            os.mkdir("tempDir")
+            files = []
+            for uploaded_file in file:  # save the uploaded file remotely to make appropriate graphs easily
+                with open(os.path.join("tempDir", uploaded_file.name), "wb") as f:
+                    f.write(uploaded_file.getbuffer()[218:])
+                    files.append(f"tempDir/{uploaded_file.name}")
+   
+   
+   
     # to generate barcoded primers
     with tab2:
         st.markdown("**Input your sequences (5' to  3'):**")

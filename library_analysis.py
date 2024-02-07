@@ -7,43 +7,66 @@ import numpy as np
 import seaborn as sns
 import os
 import shutil
-import plotly.express as px
 from matplotlib import transforms
 
 
 # %%
 def wig_reader(file):
+    """Reading and formatting WIG file
+    
+    Parameters
+    ---------
+    file: str
+        WIG file path
+
+    Returns
+    -------
+    pandas.DataFrame
+        Frequency of Nucleotides (order: A, C, G, T)
+
+    """
     df = pd.read_csv(file, sep="\t", header=None, index_col=[0])
-    df = df.drop(5, axis=1)
-    df = df.drop(6, axis=1)
-    df = df.drop(7, axis=1)
+    df = df.drop(columns=[5, 6, 7])
     return df
 
-
+#%%
 def wt_ml(files, width, height):
-    wt = wig_reader(files[0])
-    values_apart_from_max = wt.apply(lambda row: row.drop(row.idxmax()), axis=1)
-    values_apart_from_max["mutations"] = values_apart_from_max.sum(axis=1)
-    wt["variation"] = values_apart_from_max["mutations"] / wt.max(axis=1) * 100
+    """Calculates and visualizes the variance in nucleotide frequency of a 
+    mutant library using WT as a threshold to account for Nanopore sequencing and basecalling errors
+    Requres WT filename to be inputted first
+    
+    Parameters 
+    ----------
+    files: List[str, str]
+        Filenames of WT and ML WIG files respectively
 
+    Returns
+    -------
+    seaborn.Figure
+        Graph of nucleotide frequencies
+    """
+    # vafm = values apart from max
+    
+    # calculates WT nucleotide frequencies
+    wt = wig_reader(files[0])
+    vafm_wt = wt.apply(lambda row: row.drop(row.idxmax()), axis=1) 
+    vafm_wt["mutations"] = vafm_wt.sum(axis=1)
+    wt["variation"] = vafm_wt["mutations"] / wt.max(axis=1) * 100
+
+    # calculates ML nucleotide frequencies
     ml = wig_reader(files[1])
     vafm_ml = ml.apply(lambda row: row.drop(row.idxmax()), axis=1)
     vafm_ml["mutations"] = vafm_ml.sum(axis=1)
     ml["variation"] = vafm_ml["mutations"] / ml.max(axis=1) * 100
-
+    
+    # calculates the difference in frequencies
     variance = []
     for i in range(len(ml)):
         ml_v = ml["variation"].iloc[i]
         wt_v = wt["variation"].iloc[i]
-
-        if ml_v > wt_v:
-            x = ml_v - wt_v
-        else:
-            x = 0
-        variance.append(x)
+        variance.append(max(0, ml_v - wt_v))
 
     df_v = pd.DataFrame([variance])
-    # print(df_v)
 
     fig, ax = plt.subplots(figsize=(width, height))
     graph = sns.heatmap(df_v, cmap="magma", vmax=1, cbar=False, yticklabels=False)
@@ -55,13 +78,10 @@ def wt_ml(files, width, height):
 def mutation_frequency(list_of_files, names):
     mutational_freq = pd.DataFrame()
     for files in range(len(list_of_files)):
-        df = pd.read_csv(list_of_files[files], sep="\t", header=None, index_col=[0])
-        df = df.drop(5, axis=1)
-        df = df.drop(6, axis=1)
-        df = df.drop(7, axis=1)
+        df = wig_reader(list_of_files[files])
         values_apart_from_max = df.apply(lambda row: row.drop(row.idxmax()), axis=1)
         values_apart_from_max["mutations"] = values_apart_from_max.sum(axis=1)
-        # filename = files.split(".")[0]
+
         sample_name = names[files]
         mutational_freq[sample_name] = (
             values_apart_from_max["mutations"]
@@ -98,11 +118,7 @@ with st.expander("Mutant Library Variation", True):
             st.write("UPLOADED!")
             os.mkdir("tempDir")
             files = []
-            for (
-                uploaded_file
-            ) in (
-                file
-            ):  # save the uploaded file remotely to make appropriate graphs easily
+            for uploaded_file in file:  # save the uploaded file remotely to make appropriate graphs easily
                 with open(os.path.join("tempDir", uploaded_file.name), "wb") as f:
                     f.write(uploaded_file.getbuffer()[218:])
                     files.append(f"tempDir/{uploaded_file.name}")
@@ -126,12 +142,9 @@ with st.expander("Mutant Variation in sorted samples", True):
             os.mkdir("tempDir")
             files = []
             labels = []
-            for (
-                uploaded_file
-            ) in (
-                file
-            ):  # save the uploaded file remotely to make appropriate graphs easily
+            for   uploaded_file in file:  # save the uploaded file remotely to make appropriate graphs easily
                 with open(os.path.join("tempDir", uploaded_file.name), "wb") as f:
+                    # Try to find "\n" in the buffer
                     f.write(uploaded_file.getbuffer()[230:])
                     files.append(f"tempDir/{uploaded_file.name}")
                     labels.append(uploaded_file.name)

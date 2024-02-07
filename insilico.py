@@ -163,7 +163,7 @@ if __name__ == "__main__":
             st.write(sequence)
         if not valid_dna(sequence):
             st.error("That doesn't look like a DNA sequence. Please check your query once more")
-        elif len(sequence) % 3 is not 0:
+        elif len(sequence) % 3 != 0:
             st.error("The sequence cannot be translated. Please check the length of your input sequence")
         else:
             dna, aa = mutant_library(
