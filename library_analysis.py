@@ -68,7 +68,7 @@ def wt_ml(files, width, height):
 
     df_v = pd.DataFrame([variance])
 
-    fig, ax = plt.subplots(figsize=(width, height))
+    _fig, _ax = plt.subplots(figsize=(width, height))
     graph = sns.heatmap(df_v, cmap="magma", vmax=1, cbar=False, yticklabels=False)
     # graph = px.imshow(variance)
 
@@ -89,10 +89,10 @@ def mutation_frequency(list_of_files, names):
             * 100
         )
 
-    # fig, ax = plt.subplots(figsize=(35, 2))
-    # graph = sns.heatmap([mutation_frequency['High Background'][:563], mutation_frequency['Low Background'][:563],mutational_freq['High Signal'][:563],  mutational_freq['Low Signal'][:563]], cmap ='magma', vmax=90)
-    # graph = sns.heatmap(mutational_freq, cmap ='magma', vmax=90)
-    graph = px.imshow(mutational_freq, color_continuous_scale="delta", zmax=90)
+    _fig, _ax = plt.subplots(figsize=(35, 2))
+    graph = sns.heatmap([mutation_frequency['High Background'][:563], mutation_frequency['Low Background'][:563],mutational_freq['High Signal'][:563],  mutational_freq['Low Signal'][:563]], cmap ='magma', vmax=90)
+    graph = sns.heatmap(mutational_freq, cmap ='magma', vmax=90)
+    #graph = px.imshow(mutational_freq, color_continuous_scale="delta", zmax=90)
 
     return graph
 

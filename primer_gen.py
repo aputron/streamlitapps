@@ -1,8 +1,11 @@
 #%%
-import Bio #.SeqIO
+import Bio.SeqIO
+from Bio import Seq
 import streamlit as st
 import pandas as pd
 import re
+import os
+import shutil
 
 #%%
 
@@ -51,18 +54,25 @@ def list_mut(description):
         des.append(mutant)
     return des
 
-# Function to generate forward and reverse primers for a mutant library
-def primer_db(filename):
+def primers(filename, assembly):
+    """Function to generate primers with the same forward and (reverse complementary) reverse sequences for a mutant library. Expected to work with Gibson Assembly.
+    Parameters:
+    ----------
+    filename: str
+    FASTA file containing the sequences with a description as defined in the in-silico mutant library
+
+    Returns
+    -------
+    pandas.DataFrame
+    Forward and reverse primer lists
+    """
     
     # Read the file and store sequences and descriptions
     seq, description = read_mut_lib(filename)
     
     # Lists that will be inputted into the resulting excel sheet
-    ids=[] # mutant number
-    for_primers = [] # forward primer
-    rev_primers = [] # reverse primer
-    mutant_f=[] # primer name (forward)
-    mutant_r =[] # primer name (reverse) repeated for easily viewing on snapgene
+    # mutant number, mutation description, forward primer, reverse primer, forward primer name, reverse primer name repeated for easily viewing on snapgene
+    ids, descrip, for_primers, rev_primers, mutant_f, mutant_r=[], [], [], [], [], [] 
     
     # Extract the mutations to be made
     des = list_mut(description)
@@ -70,6 +80,7 @@ def primer_db(filename):
     # identify primers and generate primers based on the mutations
     for i in range(len(des)):
         for x in des[i]:
+            descrip.append("|".join(des[i]))
             ids.append(i)
             mutant_f.append(x+"_F")
             mutant_r.append(x+"_R")
@@ -96,15 +107,121 @@ def primer_db(filename):
                         primer=seq[i][count]+primer
                         count-=1
                 # make the reverse complement for the reverse primer 
-                rev_primer = primer.reverse_complement()
+                if assembly == "Ligation":
+                    rev_primer = seq[i][(base_change-32):(base_change-12)].reverse_complement()
+                    if not rev_primer:
+                        rev_primer = "Not Available"
+                    print(rev_primer)
+                elif assembly == "Gibson Assembly":
+                    rev_primer = primer.reverse_complement()
+                else:
+                    rev_primer = seq[i][(base_change-24):(base_change-2)].reverse_complement()
             for_primers.append(str(primer))
             rev_primers.append(str(rev_primer))
-            
+    print(len(ids))
+    print(len(descrip))
     # Create a dataframe to easily make an excel sheet
     # Contains the mutant id, forward primer name, forward primer, reverse primer name, reverse primer
-    df = pd.DataFrame({"Description":ids, "Primer_F":mutant_f, "Forward Primer":for_primers, "Primer_R":mutant_r, "Reverse Primer":rev_primers})
+    df = pd.DataFrame({"ID":ids, "Description":descrip, "Primer_F":mutant_f, "Forward Primer":for_primers, "Primer_R":mutant_r, "Reverse Primer":rev_primers})
     
     return df
+
+#%%
+def residue_distance(list, threshold=33):
+    """Function to check the distance between two predicted mutations to perform PCR
+
+    Parameters:
+    ----------
+    list: List[str]
+    List of all the mutations in a single predicted sequence
+
+    threshold: int
+    Minimum distance between 2 mutant residues
+
+    Returns
+    -------
+    bool
+    Are the mutations far enough from each other to have successful PCR and Gibson
+    """
+    count = 0
+    for i in range(len(list)-1):
+        distance =  int(re.findall(r'\d+', list[i+1])[0])-int(re.findall(r'\d+', list[i])[0])
+        if distance < threshold:
+            count+=1
+    if count == 0:
+        status=True
+    else:
+        status=False
+    return status
+
+
+#%%
+def primer_multi_gibson(filename):
+    """Function to generate primers for multiple mutations in a gibson assembly method
+
+    Parameters:
+    ----------
+    filename: str
+    FASTA file containing the sequences with a description as defined in the in-silico mutant library
+
+    Returns
+    -------
+    pandas.DataFrame
+    Forward and reverse primer lists
+    """
+     
+    # Read the file and store sequences and descriptions
+    seq, description = read_mut_lib(filename)
+    
+    # Lists that will be inputted into the resulting excel sheet
+    # mutant number, mutation description, forward primer, reverse primer, forward primer name, reverse primer name repeated for easily viewing on snapgene
+    ids, descrip, for_primers, rev_primers, mutant_f, mutant_r=[], [], [], [], [], [] 
+    
+    
+    # Extract the mutations to be made
+    des = list_mut(description)
+
+    # identify primers and generate primers based on the mutations
+    for i in range(len(des)):
+        if residue_distance(des[i]): # check if the predicted mutations are viable for a gibson assembly type mutation
+            for x in des[i]:
+                descrip.append("|".join(des[i]))
+                ids.append(i)
+                mutant_f.append(x+"_F")
+                mutant_r.append(x+"_R")
+                
+                # identify the aa number that is mutated
+                numbers = re.findall(r'\d+', x)
+                
+                # identify the index of the dna that has to be changed
+                base_change = int(numbers[0]) * 3
+                
+                # make a primer using 10 bases before and 9 bases after the mutable codon
+                primer = seq[i][(base_change-12):(base_change+12)]
+                
+                # ensure there is no A at the 3' end
+                if len(primer) != 0:
+                    if primer[-1]=="A":
+                        count = base_change+12
+                        while primer[-1]=="A":
+                            primer+=seq[i][count]
+                            count+=1
+                    elif primer[0]=="T":
+                        count = (base_change-13)
+                        while primer[0]=="T":
+                            primer=seq[i][count]+primer
+                            count-=1
+                    # make the reverse complement for the reverse primer 
+                    rev_primer = primer.reverse_complement()
+                for_primers.append(str(primer))
+                rev_primers.append(str(rev_primer))
+                
+        # Create a dataframe to easily make an excel sheet
+        # Contains the mutant id, forward primer name, forward primer, reverse primer name, reverse primer
+        df = pd.DataFrame({"ID":ids, "Description":descrip, "Primer_F":mutant_f, "Forward Primer":for_primers, "Primer_R":mutant_r, "Reverse Primer":rev_primers})
+            
+    return df
+
 
 #%%
 def valid_dna(seq):
@@ -179,24 +296,38 @@ if __name__ == "__main__":
 
     # to design primers for site-directed mutagenesis
     with tab1:
-        with st.form("ml-form"):
-            file = st.file_uploader(
-            "FILE UPLOADER: Input one FASTA file containing your mutant candidates, with the respective mutations in the description",
-            type=".fasta",
-            accept_multiple_files=True,
+        file = st.file_uploader(
+        "FILE UPLOADER: Input one FASTA file containing your mutant candidates, with the respective mutations in the description",
+        type=".fasta",
+        accept_multiple_files=False,
         )
-        submitted = st.form_submit_button("Submit!")
-        if submitted and len(file) == 2:
-            st.write("UPLOADED!")
+    
+        option = st.selectbox('How would you like to assemble the mutations?', ('Gibson Assembly','Ligation', 'Staggered Gibson Assembly'))
+        
+        multiple = st.checkbox("Multiple mutations per sequence")
+
+        submitted = st.button("Submit!", key="mutant")
+    
+        if submitted and file is not None:
+            if os.path.isdir('tempDir'):
+                shutil.rmtree("tempDir")
             os.mkdir("tempDir")
             files = []
-            for uploaded_file in file:  # save the uploaded file remotely to make appropriate graphs easily
-                with open(os.path.join("tempDir", uploaded_file.name), "wb") as f:
-                    f.write(uploaded_file.getbuffer()[218:])
-                    files.append(f"tempDir/{uploaded_file.name}")
-   
-   
-   
+            # save the uploaded file remotely
+            with open(os.path.join("tempDir", file.name), "wb") as f:
+                f.write(file.getbuffer())
+            path = f'tempDir/{file.name}'
+            if multiple:
+                df = primer_multi_gibson(path)
+            else:
+                df = primers(path, option)
+
+            st.download_button(label="Download primers", 
+                                    data=df.to_csv(), 
+                                    file_name='primers.csv') # download excel file in an easy to order format
+            st.write(df)
+ 
+
     # to generate barcoded primers
     with tab2:
         st.markdown("**Input your sequences (5' to  3'):**")
@@ -257,3 +388,5 @@ if __name__ == "__main__":
                 st.download_button(label="Download primers", 
                                     data=barcodes.to_csv(), 
                                     file_name=f'{filename}.csv') # download excel file in an easy to order format
+
+# %%
