@@ -95,11 +95,11 @@ def mutant_library(ref_seq, filename, overall_lib_size=500000, aa_sub_count=(4, 
             description.append(des)
         description = "|".join(description)
         dna_read = SeqRecord(
-            Seq(mutated_seqs[i]), id="Mutant Library", description=description
+            Seq(mutated_seqs[i]), id="Mutant_Library", description=description
         )
         fasta_dna.append(dna_read)
         aa_read = SeqRecord(
-            Seq(mut_aa[i]), id="Mutant Library", description=description
+            Seq(mut_aa[i]), id="Mutant_Library", description=description
         )
         fasta_aa.append(aa_read)
     Bio.SeqIO.write(fasta_dna, f"tempDir/{filename}_dna.fasta", "fasta")
