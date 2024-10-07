@@ -54,15 +54,15 @@ def facs_graph(files, labels, colour, width, height, y_lim, x_lim, bins, x_axis)
 
     # plot the graph using matplotlib and seaborn
     _fig, _ax = plt.subplots(figsize=(width, height))
-    # _ax.legend_ = None
+    _ax.set_xlabel()
+    _ax.set_ylabel()
     graph = sns.histplot(df, multiple="layer", 
                          log_scale=True, 
                          element="poly", 
                          palette=colour, 
                          bins=bins, 
                          legend=None,
-                         x_axis=""
-                         y_axis="")
+                         )
     graph.set_ylim(y_lim)
     graph.set_xlim(x_lim)
 
