@@ -54,6 +54,7 @@ def facs_graph(files, labels, colour, width, height, y_lim, x_lim, bins, x_axis)
 
     # plot the graph using matplotlib and seaborn
     _fig, _ax = plt.subplots(figsize=(width, height))
+    _ax.get_legend().remove()
     graph = sns.histplot(df, multiple="layer", log_scale=True, element="poly", palette=colour, bins=bins)
     graph.set_ylim(y_lim)
     graph.set_xlim(x_lim)
@@ -238,7 +239,7 @@ if __name__ == "__main__":
                     with col1: # have different dimensional defaults for different graph orientations
                         width = st.slider("Graph width", 10, 20)
                         height = st.slider("Graph height", 1, 20)
-                        y_lim = st.slider("Y axis limits", 1, 10000, (1, 6000))
+                        y_lim = st.slider("Y axis limits", 1, 10000, (1, 500))
                         x_lim = st.slider("X axis limits", 1, 10000, (1, 3000))
                         bins = st.slider("Bins for histogram", 70, 200, 100)
                         x_axis = st.checkbox("X axis label", True)
